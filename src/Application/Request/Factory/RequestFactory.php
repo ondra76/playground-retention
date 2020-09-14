@@ -18,8 +18,9 @@ final class RequestFactory
 
     /**
      * @param array<string,mixed> $serverVars
+     * @param array<string,array> $files
      */
-    public function create($serverVars): Request
+    public function create(array $serverVars, array $files): Request
     {
         foreach (self::KEYS_REQUIRED as $key) {
             if (false === key_exists($key, $serverVars)) {
@@ -29,7 +30,8 @@ final class RequestFactory
 
         return new Request(
             $serverVars[self::KEY_REQUEST_METHOD],
-            $serverVars[self::KEY_REQUEST_URI]
+            $serverVars[self::KEY_REQUEST_URI],
+            $files
         );
     }
 }

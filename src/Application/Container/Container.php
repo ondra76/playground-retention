@@ -4,12 +4,18 @@ declare(strict_types=1);
 
 namespace Application\Container;
 
+use Application\Container\Exception\EnvironmentVariableNotFoundException;
 use Application\Container\Factory\ContainerFactory;
+use Application\Controller\RetentionController;
+use Application\Handler\Retention\RetentionHandler;
 use Application\Request\Authentication\BasicRequestAuthenticationResolver;
 use Application\Request\Authentication\BasicRequestAuthenticator;
 use Application\Request\Factory\RequestFactory;
 use Application\Response\Factory\ResponseFactory;
 use Application\Router\Router;
+use Domain\Retention\Logger\RetentionActionLoggerInterface;
+use Domain\Retention\Resolver\RetentionResolver;
+use Infrastructure\Retention\Parser\UserFileParser;
 
 final class Container
 {
@@ -42,6 +48,30 @@ final class Container
      * @var Router|null
      */
     private $router = null;
+
+    /**
+     * @var RetentionController|null
+     */
+    private $retentionController = null;
+
+    /**
+     * @var RetentionHandler|null
+     */
+    private $retentionHandler = null;
+
+    /**
+     * @var UserFileParser|null
+     */
+    private $userFileParser = null;
+
+    /**
+     * @var RetentionResolver|null
+     */
+    private $retentionResolver = null;
+    /**
+     * @var RetentionActionLoggerInterface|null
+     */
+    private $retentionActionLogger = null;
 
     private function __construct()
     {
@@ -90,7 +120,9 @@ final class Container
         if (null === $this->router) {
             $this->router
                 = $this->factory->createRouter(
-                    $this->getResponseFactory()
+                    $this->getResponseFactory(),
+                    $this->getRetentionController(),
+                    $this->getEnvironmentVariable('RETENTION_RESOLVER_URL')
                 );
         }
 
@@ -105,5 +137,80 @@ final class Container
         }
 
         return $this->responseFactory;
+    }
+
+
+    private function getRetentionController(): RetentionController
+    {
+        if (null === $this->retentionController) {
+            $this->retentionController
+                = $this->factory->createRetentionController(
+                    $this->getEnvironmentVariable('RETENTION_RESOLVER_FORM_FIELD'),
+                    $this->getResponseFactory(),
+                    $this->getRetentionHandler()
+                );
+        }
+
+        return $this->retentionController;
+    }
+
+    private function getEnvironmentVariable(string $environmentVariableName): string
+    {
+        $variable = \getenv($environmentVariableName);
+        if (false === $variable) {
+            throw new EnvironmentVariableNotFoundException($environmentVariableName);
+        }
+
+        return $variable;
+    }
+
+    public function getUserFileParser(): UserFileParser
+    {
+        if (null === $this->userFileParser) {
+            $this->userFileParser
+                = $this->factory->createUserFileParser();
+        }
+
+        return $this->userFileParser;
+    }
+
+
+    private function getRetentionHandler(): RetentionHandler
+    {
+        if (null === $this->retentionHandler) {
+            $this->retentionHandler
+                = $this->factory->createRetentionHandler(
+                    $this->getUserFileParser(),
+                    $this->getRetentionResolver()
+                );
+        }
+
+        return $this->retentionHandler;
+    }
+
+    private function getRetentionResolver(): RetentionResolver
+    {
+        if (null === $this->retentionResolver) {
+            $this->retentionResolver
+                = $this->factory->createRetentionResolver(
+                    $this->getRetentionActionLogger()
+                );
+        }
+
+        return $this->retentionResolver;
+    }
+
+
+    private function getRetentionActionLogger(): RetentionActionLoggerInterface
+    {
+        if (null === $this->retentionActionLogger) {
+            $this->retentionActionLogger
+                = $this->factory->createRetentionActionLogger(
+                    $this->getEnvironmentVariable('RETENTION_RESOLVER_PATH_LOG_ACTION_SMS'),
+                    $this->getEnvironmentVariable('RETENTION_RESOLVER_PATH_LOG_ACTION_NONE')
+                );
+        }
+
+        return $this->retentionActionLogger;
     }
 }
