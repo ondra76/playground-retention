@@ -10,7 +10,7 @@ use Application\Response\ResponseInterface;
 final class ResponseFactory
 {
     /**
-     * @param array<string,mixed> $data
+     * @param array<mixed,mixed> $data
      */
     public function createJsonResponse(int $code, array $data): ResponseInterface
     {

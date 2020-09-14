@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Application\Request;
 
 use Application\Request\Exception\EmptyRequestUriException;
+use Application\Request\Exception\MissingPostFilePathException;
 use Application\Request\Exception\UnsupportedMethodException;
 
 final class Request
@@ -15,6 +16,7 @@ final class Request
         self::METHOD_POST,
         self::METHOD_GET,
     ];
+    private const PATH_FIELD_NAME = 'tmp_name';
     /**
      * @var string
      */
@@ -24,9 +26,18 @@ final class Request
      */
     private $requestUri;
 
+    /**
+     * @var array<string,array>
+     */
+    private $files;
+
+    /**
+     * @param array<string,array> $files
+     */
     public function __construct(
         string $requestMethod,
-        string $requestUri
+        string $requestUri,
+        array $files
     ) {
         if (false === in_array(
             $requestMethod,
@@ -40,6 +51,7 @@ final class Request
 
         $this->requestMethod = $requestMethod;
         $this->requestUri = $requestUri;
+        $this->files = $files;
     }
 
     public function isPost(): bool
@@ -50,5 +62,13 @@ final class Request
     public function isUriStartingWith(string $URI): bool
     {
         return 0 === stripos($this->requestUri, $URI);
+    }
+
+    public function getPostFilePath(string $formFieldName): string
+    {
+        if (false === isset($this->files[$formFieldName][self::PATH_FIELD_NAME])) {
+            throw new MissingPostFilePathException($formFieldName);
+        }
+        return $this->files[$formFieldName][self::PATH_FIELD_NAME];
     }
 }
