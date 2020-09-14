@@ -1,0 +1,20 @@
+{
+  "name": "ondra76/playground-retention",
+  "description": "Playground - customer retention resolver",
+  "type": "project",
+  "license": "proprietary",
+  "require-dev": {
+    "phpstan/phpstan": "^0.12.42",
+    "phpunit/phpunit": "^6.5",
+    "squizlabs/php_codesniffer": "^3.5"
+  },
+  "require": {
+    "ext-json": "*"
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "App\\Tests\\Unit\\": "tests/unit/",
+      "App\\Tests\\Integration\\": "tests/integration/"
+    }
+  }
+}
